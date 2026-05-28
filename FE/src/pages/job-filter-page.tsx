@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { JobFilterPanel } from "../components/jobs/job-filter-panel";
 import { SectionTitle } from "../components/jobs/ui";
 import { buildSearchParams, defaultJobFilters, parseFilters } from "../lib/job-filters";
-import type { Degree, ExperienceLevel, JobFilters, JobType } from "../types/job";
+import type { JobFilters } from "../types/job";
 
 function toggleValue<T extends string>(values: T[], value: T) {
   return values.includes(value)
@@ -40,7 +40,7 @@ export function JobFilterPage() {
           </Link>
           <SectionTitle
             title="Bộ lọc công việc"
-            subtitle="Trang riêng cho mobile hoặc khi cần chỉnh toàn bộ bộ lọc."
+            subtitle="Tinh chỉnh tìm kiếm theo nhu cầu của bạn."
           />
         </div>
       </div>
@@ -50,13 +50,17 @@ export function JobFilterPage() {
         skillSearch={skillSearch}
         onSkillSearchChange={setSkillSearch}
         onToggleSkill={(value) => patchFilters({ skills: toggleValue(draftFilters.skills, value) })}
-        onToggleJobType={(value: JobType) => patchFilters({ jobTypes: toggleValue(draftFilters.jobTypes, value) })}
-        onToggleLevel={(value: ExperienceLevel) => patchFilters({ levels: toggleValue(draftFilters.levels, value) })}
-        onToggleDegree={(value: Degree) => patchFilters({ degrees: toggleValue(draftFilters.degrees, value) })}
-        onPositionChange={(position) => patchFilters({ position })}
+        onLocationChange={(location) => patchFilters({ location })}
         onReset={() => setDraftFilters(defaultJobFilters)}
-        onSave={saveFilters}
       />
+
+      <button
+        type="button"
+        onClick={saveFilters}
+        className="rounded-xl bg-primary px-6 py-3 text-center font-semibold text-white transition hover:bg-blue-700"
+      >
+        Áp dụng bộ lọc
+      </button>
     </div>
   );
 }

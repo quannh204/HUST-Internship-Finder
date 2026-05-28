@@ -1,45 +1,54 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Panel, Pill, SectionTitle } from "../components/jobs/ui";
-import { jobs } from "../data/jobs";
+import { Panel, Pill } from "../components/jobs/ui";
+import { jobApi } from "../lib/api";
+import type { Job } from "../types/job";
 
-function BulletList({
-  items,
-  tone = "default",
-}: {
-  items: string[];
-  tone?: "default" | "success" | "muted";
-}) {
-  return (
-    <ul className="space-y-3">
-      {items.map((item) => (
-        <li key={item} className="flex gap-3 text-sm leading-6">
-          <span
-            className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
-              tone === "success"
-                ? "bg-emerald-50 text-emerald-600"
-                : tone === "muted"
-                  ? "bg-slate-100 text-slate-500"
-                  : "bg-blue-50 text-blue-600"
-            }`}
-          >
-            {tone === "success" ? "OK" : "-"}
-          </span>
-          <span className={tone === "muted" ? "text-slate-500" : "text-slate-700"}>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
+function getCompanyInitials(companyName: string): string {
+  return companyName
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export function JobDetailPage() {
   const { id } = useParams();
-  const job = jobs.find((item) => item.id === id);
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!job) {
+  useEffect(() => {
+    const fetchJob = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const response = await jobApi.getJobById(id);
+        setJob(response.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch job");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJob();
+  }, [id]);
+
+  if (loading) {
     return (
       <Panel className="mx-auto max-w-2xl p-8 text-center">
-        <h2 className="text-xl font-semibold text-slate-900">Không tìm thấy công việc</h2>
-        <p className="mt-2 text-sm text-slate-500">Job ID không tồn tại trong mock data hiện tại.</p>
+        <p className="text-slate-500">Đang tải thông tin công việc...</p>
+      </Panel>
+    );
+  }
+
+  if (error) {
+    return (
+      <Panel className="mx-auto max-w-2xl border border-red-200 bg-red-50 p-8 text-center">
+        <h2 className="text-xl font-semibold text-red-600">Lỗi</h2>
+        <p className="mt-2 text-sm text-red-500">{error}</p>
         <Link
           to="/jobs"
           className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -50,23 +59,41 @@ export function JobDetailPage() {
     );
   }
 
+  if (!job) {
+    return (
+      <Panel className="mx-auto max-w-2xl p-8 text-center">
+        <h2 className="text-xl font-semibold text-slate-900">Không tìm thấy công việc</h2>
+        <p className="mt-2 text-sm text-slate-500">Công việc bạn tìm kiếm không tồn tại.</p>
+        <Link
+          to="/jobs"
+          className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+        >
+          Quay lại danh sách
+        </Link>
+      </Panel>
+    );
+  }
+
+  const skillNames = Array.isArray(job.skills) 
+    ? job.skills.map(s => typeof s === 'string' ? s : s.name)
+    : [];
+
+  const initials = getCompanyInitials(job.companyName);
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 text-center">
-        <div className="flex items-center justify-start">
-          <Link to="/jobs" className="text-sm font-medium text-primary transition hover:text-blue-700">
-            Quay lại
-          </Link>
-        </div>
-        <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">Chi tiết công việc</h1>
+      <div className="flex items-center">
+        <Link to="/jobs" className="text-sm font-medium text-primary transition hover:text-blue-700">
+          ← Quay lại danh sách
+        </Link>
       </div>
 
       <div className="mx-auto w-full max-w-5xl space-y-5">
         <Panel className="p-5 sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-xl font-semibold text-primary">
-                {job.companyLogoText}
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-2xl font-semibold text-primary">
+                {initials}
               </div>
               <div className="space-y-3">
                 <div>
@@ -75,85 +102,93 @@ export function JobDetailPage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Pill tone="blue">{job.jobType}</Pill>
-                  <Pill>{job.level}</Pill>
                   <Pill>{job.workType}</Pill>
+                  {job.fresherAccepted && <Pill tone="success">Fresher OK</Pill>}
                 </div>
               </div>
             </div>
-            <div className="grid gap-2 text-sm text-slate-600 sm:text-right">
-              <p>{job.location}</p>
-              <p>{job.salary}</p>
-              <p>{job.duration}</p>
+            <div className="space-y-2 text-right text-sm text-slate-600">
+              <p>
+                <span className="block text-xs font-semibold uppercase text-slate-500">Địa điểm</span>
+                {job.location}
+              </p>
+              <p>
+                <span className="block text-xs font-semibold uppercase text-slate-500">Mức lương</span>
+                {job.salary || "Thỏa thuận"}
+              </p>
+              <p>
+                <span className="block text-xs font-semibold uppercase text-slate-500">Hạn nộp</span>
+                {new Date(job.deadline).toLocaleDateString("vi-VN")}
+              </p>
             </div>
           </div>
         </Panel>
 
         <Panel className="p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              className="rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:flex-1"
-            >
-              Ứng tuyển
+            <button className="rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 sm:flex-1">
+              Ứng tuyển ngay
             </button>
-            <button
-              type="button"
-              className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 sm:flex-1"
-            >
-              Đã lưu
-            </button>
-            <button
-              type="button"
-              className="rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 sm:flex-1"
-            >
-              Tạm bỏ qua
+            <button className="rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary sm:flex-1">
+              Lưu công việc
             </button>
           </div>
         </Panel>
 
+        {/* Description */}
         <Panel className="p-5 sm:p-6">
           <div className="space-y-4">
-            <SectionTitle title="Mô tả công việc" />
-            <p className="text-sm leading-7 text-slate-600">{job.description}</p>
-            <BulletList items={job.responsibilities} />
+            <h2 className="text-lg font-semibold text-slate-900">Mô tả công việc</h2>
+            <p className="whitespace-pre-wrap leading-relaxed text-slate-700">{job.description}</p>
           </div>
         </Panel>
 
+        {/* Requirements */}
         <Panel className="p-5 sm:p-6">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">Yêu cầu</h2>
+            <p className="whitespace-pre-wrap leading-relaxed text-slate-700">{job.requirements}</p>
+          </div>
+        </Panel>
+
+        {/* Skills */}
+        {skillNames.length > 0 && (
+          <Panel className="p-5 sm:p-6">
             <div className="space-y-4">
-              <SectionTitle title="Phải có" />
-              <BulletList items={job.mustHave} tone="success" />
+              <h2 className="text-lg font-semibold text-slate-900">Kỹ năng cần thiết</h2>
+              <div className="flex flex-wrap gap-2">
+                {skillNames.map((skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="space-y-4">
-              <SectionTitle title="Nice to have" />
-              <BulletList items={job.niceToHave} tone="muted" />
-            </div>
-          </div>
-        </Panel>
+          </Panel>
+        )}
 
-        <Panel className="p-5 sm:p-6">
-          <div className="space-y-4">
-            <SectionTitle title="Kỹ năng" />
-            <div className="flex flex-wrap gap-2">
-              {job.skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-full border border-line bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700"
-                >
-                  {skill}
-                </span>
-              ))}
+        {/* Additional Info */}
+        {(job.experience || job.foreignLanguageAbility) && (
+          <Panel className="p-5 sm:p-6">
+            <div className="grid gap-6 sm:grid-cols-2">
+              {job.experience && (
+                <div>
+                  <h3 className="font-semibold text-slate-900">Kinh nghiệm</h3>
+                  <p className="mt-2 text-slate-700">{job.experience}</p>
+                </div>
+              )}
+              {job.foreignLanguageAbility && (
+                <div>
+                  <h3 className="font-semibold text-slate-900">Yêu cầu ngoại ngữ</h3>
+                  <p className="mt-2 text-slate-700">{job.foreignLanguageAbility}</p>
+                </div>
+              )}
             </div>
-          </div>
-        </Panel>
-
-        <Panel className="p-5 sm:p-6">
-          <div className="space-y-4">
-            <SectionTitle title="Lợi ích" />
-            <BulletList items={job.benefits} />
-          </div>
-        </Panel>
+          </Panel>
+        )}
       </div>
     </div>
   );

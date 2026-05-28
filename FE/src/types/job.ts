@@ -1,49 +1,63 @@
-export type JobType =
-  | "Internship"
-  | "Fresher"
-  | "Full-time"
-  | "Part-time"
-  | "Contract"
-  | "Temporary";
+export type JobType = "PART_TIME" | "FULL_TIME";
 
-export type ExperienceLevel =
-  | "Fresher"
-  | "Junior"
-  | "Mid"
-  | "Senior"
-  | "Lead"
-  | "Manager";
+export type WorkType = "OFFLINE" | "REMOTE" | "HYBRID";
 
-export type WorkType = "Remote" | "Hybrid" | "Onsite";
+export type JobStatus = "ACTIVE" | "EXPIRED" | "DRAFT";
 
-export type Degree = "Bachelor" | "Associate" | "Final-year" | "Certification";
+export type Skill = {
+  _id: string;
+  name: string;
+};
+
+export type Major = {
+  _id: string;
+  name: string;
+};
 
 export type Job = {
-  id: string;
+  _id: string;
   companyName: string;
-  companyLogoText: string;
   title: string;
   jobType: JobType;
-  level: ExperienceLevel;
+  description: string;
+  requirements: string;
+  skills?: Skill[];
+  majors?: Major[];
+  foreignLanguageAbility?: string;
   location: string;
   workType: WorkType;
-  salary: string;
-  duration: string;
-  skills: string[];
-  description: string;
-  responsibilities: string[];
-  mustHave: string[];
-  niceToHave: string[];
-  benefits: string[];
-  degreeRequirements: Degree[];
+  experience?: string;
+  fresherAccepted?: boolean;
+  salary?: string;
+  deadline: string;
+  sourceLink?: string;
+  status?: JobStatus;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Pagination = {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
+export type JobsResponse = {
+  data: Job[];
+  pagination: Pagination;
 };
 
 export type JobFilters = {
   keyword: string;
   location: string;
   skills: string[];
-  jobTypes: JobType[];
-  levels: ExperienceLevel[];
-  degrees: Degree[];
-  position: string;
+  workType?: WorkType;
+  experience?: string;
+  fresherAccepted?: boolean;
+  jobType?: JobType;
+  position?: string;
 };

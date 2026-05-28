@@ -1,15 +1,15 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { JobCard } from "../components/jobs/job-card";
 import { JobFilterPanel } from "../components/jobs/job-filter-panel";
 import { JobSearchBar } from "../components/jobs/job-search-bar";
 import { Pagination } from "../components/jobs/pagination";
 import { Panel, SectionTitle } from "../components/jobs/ui";
-import { jobs } from "../data/jobs";
-import { buildSearchParams, defaultJobFilters, filterJobs, parseFilters } from "../lib/job-filters";
-import type { Degree, ExperienceLevel, JobFilters, JobType } from "../types/job";
+import { jobApi } from "../lib/api";
+import { buildSearchParams, defaultJobFilters, parseFilters } from "../lib/job-filters";
+import type { Job, JobFilters, JobsResponse } from "../types/job";
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 10;
 
 function toggleValue<T extends string>(values: T[], value: T) {
   return values.includes(value)
@@ -20,30 +20,37 @@ function toggleValue<T extends string>(values: T[], value: T) {
 export function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = parseFilters(searchParams);
-  const deferredKeyword = useDeferredValue(filters.keyword);
-  const deferredLocation = useDeferredValue(filters.location);
   const [currentPage, setCurrentPage] = useState(1);
   const [skillSearch, setSkillSearch] = useState("");
 
-  const effectiveFilters: JobFilters = {
-    ...filters,
-    keyword: deferredKeyword,
-    location: deferredLocation,
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [totalPages, setTotalPages] = useState(0);
 
-  const filteredJobs = filterJobs(jobs, effectiveFilters);
-  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / PAGE_SIZE));
-  const visibleJobs = filteredJobs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await jobApi.getJobs(currentPage, PAGE_SIZE, {
+          location: filters.location || undefined,
+        });
+        setJobs(response.data);
+        setTotalPages(response.pagination.totalPages);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch jobs");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [currentPage, filters.location]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchParams]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   function updateFilters(nextFilters: JobFilters) {
     setSearchParams(buildSearchParams(nextFilters));
@@ -60,7 +67,7 @@ export function JobsPage() {
     <div className="space-y-6">
       <SectionTitle
         title="Danh sách việc làm"
-        subtitle="Danh sách công việc hiện đại, tối giản và responsive với mock data."
+        subtitle="Tìm kiếm công việc phù hợp từ các công ty hàng đầu."
       />
 
       <JobSearchBar
@@ -78,12 +85,8 @@ export function JobsPage() {
               skillSearch={skillSearch}
               onSkillSearchChange={setSkillSearch}
               onToggleSkill={(value) => patchFilters({ skills: toggleValue(filters.skills, value) })}
-              onToggleJobType={(value: JobType) => patchFilters({ jobTypes: toggleValue(filters.jobTypes, value) })}
-              onToggleLevel={(value: ExperienceLevel) => patchFilters({ levels: toggleValue(filters.levels, value) })}
-              onToggleDegree={(value: Degree) => patchFilters({ degrees: toggleValue(filters.degrees, value) })}
-              onPositionChange={(position) => patchFilters({ position })}
+              onLocationChange={(location) => patchFilters({ location })}
               onReset={() => updateFilters(defaultJobFilters)}
-              onSave={() => updateFilters(filters)}
             />
           </div>
         </aside>
@@ -92,8 +95,10 @@ export function JobsPage() {
           <Panel className="p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-slate-500">Kết quả hiển thị</p>
-                <p className="text-lg font-semibold text-slate-900">{filteredJobs.length} công việc</p>
+                <p className="text-sm text-slate-500">Trạng thái</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {loading ? "Đang tải..." : `${jobs.length} công việc`}
+                </p>
               </div>
               <Link
                 to="/jobs/filter"
@@ -104,10 +109,20 @@ export function JobsPage() {
             </div>
           </Panel>
 
-          {visibleJobs.length > 0 ? (
+          {error && (
+            <Panel className="border border-red-200 bg-red-50 p-5 text-center">
+              <p className="text-sm text-red-600">Lỗi: {error}</p>
+            </Panel>
+          )}
+
+          {loading ? (
+            <Panel className="p-8 text-center">
+              <p className="text-slate-500">Đang tải danh sách công việc...</p>
+            </Panel>
+          ) : jobs.length > 0 ? (
             <div className="space-y-4">
-              {visibleJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
+              {jobs.map((job) => (
+                <JobCard key={job._id} job={job} />
               ))}
             </div>
           ) : (
@@ -119,7 +134,9 @@ export function JobsPage() {
             </Panel>
           )}
 
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          {totalPages > 1 && (
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          )}
         </div>
       </div>
     </div>
