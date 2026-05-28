@@ -8,7 +8,7 @@ const router = Router();
  * @swagger
  * /api/jobs:
  *   get:
- *     summary: Hien thi danh sach cong viec
+ *     summary: Hiển thị danh sách công việc
  *     tags: [Jobs]
  *     parameters:
  *       - $ref: '#/components/parameters/PageParam'
@@ -17,17 +17,17 @@ const router = Router();
  *         name: position
  *         schema:
  *           type: string
- *         description: Loc theo vi tri/chuc danh cong viec
+ *         description: Lọc theo vị trí/chức danh công việc
  *       - in: query
  *         name: skills
  *         schema:
  *           type: string
- *         description: Danh sach skill id hoac ten skill, phan tach bang dau phay
+ *         description: Danh sách skill id hoặc tên skill, phân tách bằng dấu phẩy
  *       - in: query
  *         name: majors
  *         schema:
  *           type: string
- *         description: Danh sach major id hoac ten major, phan tach bang dau phay
+ *         description: Danh sách major id hoặc tên major, phân tách bằng dấu phẩy
  *       - in: query
  *         name: foreignLanguageAbility
  *         schema:
@@ -61,7 +61,7 @@ const router = Router();
  *           enum: [ACTIVE, EXPIRED, DRAFT]
  *     responses:
  *       200:
- *         description: Danh sach cong viec co phan trang
+ *         description: Danh sách công việc có phân trang
  *         content:
  *           application/json:
  *             schema:
@@ -73,7 +73,7 @@ router.get('/', asyncHandler(listJobs));
  * @swagger
  * /api/jobs/search:
  *   get:
- *     summary: Tim kiem cong viec
+ *     summary: Tìm kiếm công việc
  *     tags: [Jobs]
  *     parameters:
  *       - $ref: '#/components/parameters/PageParam'
@@ -83,7 +83,7 @@ router.get('/', asyncHandler(listJobs));
  *         required: true
  *         schema:
  *           type: string
- *         description: Tu khoa tim kiem trong title, companyName, description
+ *         description: Từ khóa tìm kiếm trong title, companyName, description
  *       - in: query
  *         name: location
  *         schema:
@@ -103,13 +103,13 @@ router.get('/', asyncHandler(listJobs));
  *           type: string
  *     responses:
  *       200:
- *         description: Ket qua tim kiem co phan trang
+ *         description: Kết quả tìm kiếm có phân trang
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/PaginatedJobsResponse'
  *       400:
- *         description: Thieu query q
+ *         description: Thiếu query q
  */
 router.get('/search', asyncHandler(searchJobs));
 
@@ -117,7 +117,7 @@ router.get('/search', asyncHandler(searchJobs));
  * @swagger
  * /api/jobs/{id}:
  *   get:
- *     summary: Hien thi chi tiet cong viec
+ *     summary: Hiển thị chi tiết công việc
  *     tags: [Jobs]
  *     parameters:
  *       - in: path
@@ -125,10 +125,10 @@ router.get('/search', asyncHandler(searchJobs));
  *         required: true
  *         schema:
  *           type: string
- *         description: MongoDB ObjectId cua cong viec
+ *         description: MongoDB ObjectId của công việc
  *     responses:
  *       200:
- *         description: Chi tiet cong viec
+ *         description: Chi tiết công việc
  *         content:
  *           application/json:
  *             schema:
@@ -137,9 +137,9 @@ router.get('/search', asyncHandler(searchJobs));
  *                 data:
  *                   $ref: '#/components/schemas/Job'
  *       400:
- *         description: Job id khong hop le
+ *         description: Job id không hợp lệ
  *       404:
- *         description: Khong tim thay cong viec
+ *         description: Không tìm thấy công việc
  */
 router.get('/:id', asyncHandler(getJobById));
 

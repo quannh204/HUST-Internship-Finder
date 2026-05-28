@@ -41,7 +41,7 @@ Swagger UI: `GET /api-docs`
 | `workType`               | String     | Yes      | `OFFLINE`, `REMOTE`, `HYBRID`                  |
 | `experience`             | String     | No       | Supports partial filter                        |
 | `fresherAccepted`        | Boolean    | No       | Default `false`                                |
-| `salary`                 | String     | No       | Default `Thoa thuan`                           |
+| `salary`                 | String     | No       | Default `Thỏa thuận`                           |
 | `deadline`               | Date       | Yes      | Application deadline                           |
 | `sourceLink`             | String     | No       | Original job source                            |
 | `status`                 | String     | No       | `ACTIVE`, `EXPIRED`, `DRAFT`, default `ACTIVE` |
@@ -90,7 +90,7 @@ Displays paginated jobs and supports filtering.
 | `skills`                 | String  | `JavaScript,Node.js` | Comma-separated skill names or ids         |
 | `majors`                 | String  | `Computer Science`   | Comma-separated major names or ids         |
 | `foreignLanguageAbility` | String  | `English`            | Partial, case-insensitive match            |
-| `location`               | String  | `Ha Noi`             | Partial, case-insensitive match            |
+| `location`               | String  | `Hà Nội`             | Partial, case-insensitive match            |
 | `workType`               | String  | `REMOTE`             | Exact enum match                           |
 | `experience`             | String  | `1 year`             | Partial, case-insensitive match            |
 | `fresherAccepted`        | Boolean | `true`               | Exact boolean match                        |
@@ -99,7 +99,7 @@ Displays paginated jobs and supports filtering.
 
 ### Example
 
-`GET /api/jobs?page=1&limit=10&position=backend&skills=Node.js&majors=Computer%20Science&location=Ha%20Noi&workType=HYBRID&fresherAccepted=true`
+`GET /api/jobs?page=1&limit=10&position=backend&skills=Node.js&majors=Computer%20Science&location=H%C3%A0%20N%E1%BB%99i&workType=HYBRID&fresherAccepted=true`
 
 ### Success Response
 
@@ -115,7 +115,7 @@ Status: `200 OK`
       "jobType": "PART_TIME",
       "skills": [{ "_id": "6656c4e8c7446f16dc1c2222", "name": "Node.js" }],
       "majors": [],
-      "location": "Ha Noi",
+      "location": "Hà Nội",
       "workType": "HYBRID",
       "fresherAccepted": true,
       "status": "ACTIVE"
@@ -154,7 +154,7 @@ Searches jobs using MongoDB full-text search.
 
 ### Example
 
-`GET /api/jobs/search?q=backend&page=1&limit=10&location=Ha%20Noi`
+`GET /api/jobs/search?q=backend&page=1&limit=10&location=H%C3%A0%20N%E1%BB%99i`
 
 ### Responses
 
@@ -198,11 +198,11 @@ Status: `200 OK`
     "skills": [{ "_id": "6656c4e8c7446f16dc1c2222", "name": "Node.js" }],
     "majors": [],
     "foreignLanguageAbility": "English reading",
-    "location": "Ha Noi",
+    "location": "Hà Nội",
     "workType": "HYBRID",
     "experience": "No experience required",
     "fresherAccepted": true,
-    "salary": "Thoa thuan",
+    "salary": "Thỏa thuận",
     "deadline": "2026-06-30T00:00:00.000Z",
     "sourceLink": "https://example.com/jobs/backend-intern",
     "status": "ACTIVE",
