@@ -22,7 +22,7 @@ const jobSchema = new mongoose.Schema(
     },
     experience: { type: String, default: '' },
     fresherAccepted: { type: Boolean, default: false },
-    salary: { type: String, default: 'Thoa thuan' },
+    salary: { type: String, default: 'Thỏa thuận' },
     deadline: { type: Date, required: true },
     sourceLink: { type: String, default: '' },
     status: {

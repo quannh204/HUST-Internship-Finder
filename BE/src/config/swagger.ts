@@ -20,13 +20,13 @@ export const swaggerSpec = swaggerJSDoc({
           in: 'query',
           name: 'page',
           schema: { type: 'integer', minimum: 1, default: 1 },
-          description: 'Trang hien tai',
+          description: 'Trang hiện tại',
         },
         LimitParam: {
           in: 'query',
           name: 'limit',
           schema: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-          description: 'So ban ghi tren moi trang',
+          description: 'Số bản ghi trên mỗi trang',
         },
       },
       schemas: {
