@@ -88,82 +88,95 @@ export function JobsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <SectionTitle
-        title="Danh sách việc làm"
-        subtitle="Tìm kiếm công việc phù hợp từ các công ty hàng đầu."
-      />
+    <div className="flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
+      {/* Fixed Header */}
+      <div className="shrink-0 bg-white px-4 sm:px-6 lg:px-8 py-4 border-b border-line">
+        <div className="mx-auto max-w-7xl">
+          <SectionTitle
+            title="Danh sách việc làm"
+            subtitle="Tìm kiếm công việc phù hợp từ các công ty hàng đầu."
+          />
 
-      <JobSearchBar
-        keyword={keywordInput}
-        location={locationInput}
-        onKeywordChange={(keyword) => setKeywordInput(keyword)}
-        onLocationChange={(location) => setLocationInput(location)}
-        onSearch={() => {
-          patchFilters({ keyword: keywordInput, location: locationInput });
-        }}
-      />
+          <JobSearchBar
+            keyword={keywordInput}
+            location={locationInput}
+            onKeywordChange={(keyword) => setKeywordInput(keyword)}
+            onLocationChange={(location) => setLocationInput(location)}
+            onSearch={() => {
+              patchFilters({ keyword: keywordInput, location: locationInput });
+            }}
+          />
+        </div>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="hidden lg:block">
-          <div className="sticky top-6">
-            <JobFilterPanel
-              filters={filters}
-              skillSearch={skillSearch}
-              onSkillSearchChange={setSkillSearch}
-              onToggleSkill={(value) => patchFilters({ skills: toggleValue(filters.skills, value) })}
-              onLocationChange={(location) => patchFilters({ location })}
-              onReset={() => updateFilters(defaultJobFilters)}
-            />
-          </div>
-        </aside>
-
-        <div className="space-y-5">
-          <Panel className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Trạng thái</p>
-                <p className="text-lg font-semibold text-slate-900">
-                  {loading ? "Đang tải..." : `${jobs.length} công việc`}
-                </p>
+      {/* Scrollable Content */}
+      <div className="flex-1 min-h-0 overflow-hidden px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto max-w-7xl h-full">
+          <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] h-full">
+            <aside className="hidden lg:block min-h-0">
+              <div className="h-full overflow-y-auto">
+                <JobFilterPanel
+                  filters={filters}
+                  skillSearch={skillSearch}
+                  onSkillSearchChange={setSkillSearch}
+                  onToggleSkill={(value) => patchFilters({ skills: toggleValue(filters.skills, value) })}
+                  onLocationChange={(location) => patchFilters({ location })}
+                  onReset={() => updateFilters(defaultJobFilters)}
+                />
               </div>
-              <Link
-                to="/jobs/filter"
-                className="inline-flex items-center justify-center rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary lg:hidden"
-              >
-                Mở bộ lọc
-              </Link>
+            </aside>
+
+            {/* Jobs List - scroll riêng phần này */}
+            <div className="flex flex-col min-h-0 overflow-y-auto">
+              <div className="flex flex-col gap-5 pb-6">
+                <Panel className="p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-slate-500">Trạng thái</p>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {loading ? "Đang tải..." : `${jobs.length} công việc`}
+                      </p>
+                    </div>
+                    <Link
+                      to="/jobs/filter"
+                      className="inline-flex items-center justify-center rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary lg:hidden"
+                    >
+                      Mở bộ lọc
+                    </Link>
+                  </div>
+                </Panel>
+
+                {error && (
+                  <Panel className="border border-red-200 bg-red-50 p-5 text-center">
+                    <p className="text-sm text-red-600">Lỗi: {error}</p>
+                  </Panel>
+                )}
+
+                {loading ? (
+                  <Panel className="p-8 text-center">
+                    <p className="text-slate-500">Đang tải danh sách công việc...</p>
+                  </Panel>
+                ) : jobs.length > 0 ? (
+                  <div className="gap-4 flex flex-col">
+                    {jobs.map((job) => (
+                      <JobCard key={job._id} job={job} />
+                    ))}
+                  </div>
+                ) : (
+                  <Panel className="p-8 text-center">
+                    <h3 className="text-lg font-semibold text-slate-900">Không tìm thấy công việc</h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                      Hãy thử giảm số lượng bộ lọc hoặc đổi từ khóa tìm kiếm.
+                    </p>
+                  </Panel>
+                )}
+
+                {totalPages > 1 && (
+                  <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                )}
+              </div>
             </div>
-          </Panel>
-
-          {error && (
-            <Panel className="border border-red-200 bg-red-50 p-5 text-center">
-              <p className="text-sm text-red-600">Lỗi: {error}</p>
-            </Panel>
-          )}
-
-          {loading ? (
-            <Panel className="p-8 text-center">
-              <p className="text-slate-500">Đang tải danh sách công việc...</p>
-            </Panel>
-          ) : jobs.length > 0 ? (
-            <div className="space-y-4">
-              {jobs.map((job) => (
-                <JobCard key={job._id} job={job} />
-              ))}
-            </div>
-          ) : (
-            <Panel className="p-8 text-center">
-              <h3 className="text-lg font-semibold text-slate-900">Không tìm thấy công việc</h3>
-              <p className="mt-2 text-sm text-slate-500">
-                Hãy thử giảm số lượng bộ lọc hoặc đổi từ khóa tìm kiếm.
-              </p>
-            </Panel>
-          )}
-
-          {totalPages > 1 && (
-            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-          )}
+          </div>
         </div>
       </div>
     </div>

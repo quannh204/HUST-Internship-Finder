@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-line/80 bg-white/90 backdrop-blur">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-line/80 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <NavLink to="/jobs" className="text-2xl font-bold tracking-tight text-primary">
           JobFit
