@@ -50,6 +50,8 @@ export function JobFilterPage() {
         skillSearch={skillSearch}
         onSkillSearchChange={setSkillSearch}
         onToggleSkill={(value) => patchFilters({ skills: toggleValue(draftFilters.skills, value) })}
+        onToggleJobType={(value) => patchFilters({ jobTypes: toggleValue(draftFilters.jobTypes, value) })}
+        onToggleWorkType={(value) => patchFilters({ workTypes: toggleValue(draftFilters.workTypes, value) })}
         onLocationChange={(location) => patchFilters({ location })}
         onReset={() => setDraftFilters(defaultJobFilters)}
       />

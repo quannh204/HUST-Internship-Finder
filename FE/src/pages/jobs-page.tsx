@@ -29,14 +29,9 @@ export function JobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [totalPages, setTotalPages] = useState(0);
-
-  useEffect(() => {
-    setLocationInput(filters.location);
-  }, [filters.location]);
-
-  useEffect(() => {
-    setKeywordInput(filters.keyword);
-  }, [filters.keyword]);
+  const selectedSkills = filters.skills.join(",");
+  const selectedWorkTypes = filters.workTypes.join(",");
+  const selectedJobTypes = filters.jobTypes.join(",");
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -44,20 +39,22 @@ export function JobsPage() {
       setError(null);
       try {
         let response: JobsResponse;
+        const apiFilters = {
+          location: filters.location || undefined,
+          skills: selectedSkills || undefined,
+          workType: selectedWorkTypes || undefined,
+          jobType: selectedJobTypes || undefined,
+        };
         
         if (filters.keyword) {
           response = await jobApi.searchJobs(
             filters.keyword,
             currentPage,
             PAGE_SIZE,
-            {
-              location: filters.location || undefined,
-            }
+            apiFilters
           );
         } else {
-          response = await jobApi.getJobs(currentPage, PAGE_SIZE, {
-            location: filters.location || undefined,
-          });
+          response = await jobApi.getJobs(currentPage, PAGE_SIZE, apiFilters);
         }
     
         setJobs(response.data);
@@ -70,17 +67,22 @@ export function JobsPage() {
     };
 
     fetchJobs();
-  }, [currentPage, filters.location, filters.keyword]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchParams]);
+  }, [currentPage, filters.location, filters.keyword, selectedJobTypes, selectedSkills, selectedWorkTypes]);
 
   function updateFilters(nextFilters: JobFilters) {
+    setCurrentPage(1);
     setSearchParams(buildSearchParams(nextFilters));
   }
 
   function patchFilters(patch: Partial<JobFilters>) {
+    if (patch.keyword !== undefined) {
+      setKeywordInput(patch.keyword);
+    }
+
+    if (patch.location !== undefined) {
+      setLocationInput(patch.location);
+    }
+
     updateFilters({
       ...filters,
       ...patch,
@@ -88,7 +90,7 @@ export function JobsPage() {
   }
 
   return (
-    <div className="flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
+    <div className="flex min-h-[calc(100dvh-80px)] flex-1 flex-col">
       {/* Fixed Header */}
       <div className="shrink-0 bg-white px-4 sm:px-6 lg:px-8 py-4 border-b border-line">
         <div className="mx-auto max-w-7xl">
@@ -120,15 +122,22 @@ export function JobsPage() {
                   skillSearch={skillSearch}
                   onSkillSearchChange={setSkillSearch}
                   onToggleSkill={(value) => patchFilters({ skills: toggleValue(filters.skills, value) })}
+                  onToggleJobType={(value) => patchFilters({ jobTypes: toggleValue(filters.jobTypes, value) })}
+                  onToggleWorkType={(value) => patchFilters({ workTypes: toggleValue(filters.workTypes, value) })}
                   onLocationChange={(location) => patchFilters({ location })}
-                  onReset={() => updateFilters(defaultJobFilters)}
+                  onReset={() => {
+                    setKeywordInput(defaultJobFilters.keyword);
+                    setLocationInput(defaultJobFilters.location);
+                    updateFilters(defaultJobFilters);
+                  }}
                 />
               </div>
             </aside>
 
             {/* Jobs List - scroll riêng phần này */}
-            <div className="flex flex-col min-h-0 overflow-y-auto">
-              <div className="flex flex-col gap-5 pb-6">
+            <div className="flex min-h-0 flex-col">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <div className="flex flex-col gap-5 pb-6">
                 <Panel className="p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -171,9 +180,10 @@ export function JobsPage() {
                   </Panel>
                 )}
 
-                {totalPages > 1 && (
-                  <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-                )}
+                </div>
+              </div>
+              <div className="shrink-0 border-t border-line bg-surface/95 py-4">
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
               </div>
             </div>
           </div>

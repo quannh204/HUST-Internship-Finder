@@ -41,6 +41,7 @@ const router = Router();
  *         schema:
  *           type: string
  *           enum: [OFFLINE, REMOTE, HYBRID]
+ *         description: One or more work types, separated by commas
  *       - in: query
  *         name: experience
  *         schema:
@@ -53,7 +54,8 @@ const router = Router();
  *         name: jobType
  *         schema:
  *           type: string
- *           enum: [PART_TIME, FULL_TIME]
+ *           enum: [PART_TIME, FULL_TIME, INTERNSHIP]
+ *         description: One or more job types, separated by commas
  *       - in: query
  *         name: status
  *         schema:
@@ -93,6 +95,13 @@ router.get('/', asyncHandler(listJobs));
  *         schema:
  *           type: string
  *           enum: [OFFLINE, REMOTE, HYBRID]
+ *         description: One or more work types, separated by commas
+ *       - in: query
+ *         name: jobType
+ *         schema:
+ *           type: string
+ *           enum: [PART_TIME, FULL_TIME, INTERNSHIP]
+ *         description: One or more job types, separated by commas
  *       - in: query
  *         name: skills
  *         schema:

@@ -1,5 +1,5 @@
-import { workTypeOptions } from "../../data/jobs";
-import type { JobFilters } from "../../types/job";
+import { jobTypeLabels, jobTypeOptions, workTypeLabels, workTypeOptions } from "../../data/jobs";
+import type { JobFilters, JobType, WorkType } from "../../types/job";
 import { Panel, SectionTitle } from "./ui";
 
 type JobFilterPanelProps = {
@@ -7,6 +7,8 @@ type JobFilterPanelProps = {
   skillSearch: string;
   onSkillSearchChange: (value: string) => void;
   onToggleSkill: (value: string) => void;
+  onToggleJobType: (value: JobType) => void;
+  onToggleWorkType: (value: WorkType) => void;
   onLocationChange: (value: string) => void;
   onReset: () => void;
 };
@@ -38,6 +40,8 @@ export function JobFilterPanel({
   skillSearch,
   onSkillSearchChange,
   onToggleSkill,
+  onToggleJobType,
+  onToggleWorkType,
   onLocationChange,
   onReset,
 }: JobFilterPanelProps) {
@@ -80,15 +84,29 @@ export function JobFilterPanel({
 
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-slate-900">Hình thức làm việc</h3>
-          <div className="space-y-1">
-            {workTypeOptions.map((workType) => (
-              <CheckboxRow
-                key={workType}
-                checked={false}
-                label={workType}
-                onClick={() => {}}
-              />
-            ))}
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="px-3 text-xs font-semibold uppercase text-slate-400">Job type</p>
+              {jobTypeOptions.map((jobType) => (
+                <CheckboxRow
+                  key={jobType}
+                  checked={filters.jobTypes.includes(jobType)}
+                  label={jobTypeLabels[jobType]}
+                  onClick={() => onToggleJobType(jobType)}
+                />
+              ))}
+            </div>
+            <div className="space-y-1">
+              <p className="px-3 text-xs font-semibold uppercase text-slate-400">Work mode</p>
+              {workTypeOptions.map((workType) => (
+                <CheckboxRow
+                  key={workType}
+                  checked={filters.workTypes.includes(workType)}
+                  label={workTypeLabels[workType]}
+                  onClick={() => onToggleWorkType(workType)}
+                />
+              ))}
+            </div>
           </div>
         </section>
 

@@ -3,9 +3,9 @@ import { SiteHeader } from "../components/layout/site-header";
 
 export function App() {
   return (
-    <div className="min-h-screen bg-surface text-text">
+    <div className="flex min-h-screen flex-col bg-surface text-text">
       <SiteHeader />
-      <main className="mx-auto w-full flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 80px)' }}>
+      <main className="flex min-h-0 w-full flex-1 flex-col">
         <Outlet />
       </main>
     </div>

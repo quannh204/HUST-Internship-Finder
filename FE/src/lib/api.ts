@@ -58,6 +58,7 @@ export const jobApi = {
       skills?: string;
       location?: string;
       workType?: string;
+      jobType?: string;
     }
   ): Promise<JobsResponse> {
     const params = new URLSearchParams();
@@ -70,6 +71,7 @@ export const jobApi = {
       if (filters.skills) params.append("skills", filters.skills);
       if (filters.location) params.append("location", filters.location);
       if (filters.workType) params.append("workType", filters.workType);
+      if (filters.jobType) params.append("jobType", filters.jobType);
     }
 
     const response = await fetch(`${API_BASE_URL}/jobs/search?${params.toString()}`);

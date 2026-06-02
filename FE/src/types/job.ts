@@ -1,4 +1,4 @@
-export type JobType = "PART_TIME" | "FULL_TIME";
+export type JobType = "PART_TIME" | "FULL_TIME" | "INTERNSHIP";
 
 export type WorkType = "OFFLINE" | "REMOTE" | "HYBRID";
 
@@ -55,9 +55,9 @@ export type JobFilters = {
   keyword: string;
   location: string;
   skills: string[];
-  workType?: WorkType;
+  workTypes: WorkType[];
   experience?: string;
   fresherAccepted?: boolean;
-  jobType?: JobType;
+  jobTypes: JobType[];
   position?: string;
 };

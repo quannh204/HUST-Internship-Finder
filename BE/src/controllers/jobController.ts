@@ -5,30 +5,40 @@ import { Major } from '../models/major';
 import { Skill } from '../models/skill';
 import { buildPaginationMeta, getPagination } from '../utils/pagination';
 
-const parseCsv = (value: unknown) => {
-  if (!value || typeof value !== 'string') {
-    return [];
-  }
+const parseCsv = (value: unknown): string[] => {
+  const values = Array.isArray(value) ? value : [value];
 
-  return value
-    .split(',')
+  return values
+    .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
     .map((item) => item.trim())
     .filter(Boolean);
 };
 
+const parseEnumCsv = (value: unknown, allowedValues: readonly string[]) =>
+  parseCsv(value)
+    .map((item) => item.toUpperCase())
+    .filter((item) => allowedValues.includes(item));
+
 const createRegex = (value: string) =>
   new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+
+const addAndCondition = (
+  filter: FilterQuery<JobDocument>,
+  condition: FilterQuery<JobDocument>,
+) => {
+  filter.$and = [...(filter.$and ?? []), condition];
+};
+
+const allowedWorkTypes = ['OFFLINE', 'REMOTE', 'HYBRID'] as const;
+const allowedJobTypes = ['PART_TIME', 'FULL_TIME', 'INTERNSHIP'] as const;
+const standardJobTypes: readonly string[] = ['PART_TIME', 'FULL_TIME'];
+const internshipTitleRegex = /intern(ship)?|thực\s*tập/i;
 
 const removeVietnameseDiacritics = (str: string): string => {
   return str
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') 
     .toLowerCase();
-};
-
-const createLocationRegex = (value: string) => {
-  const normalized = removeVietnameseDiacritics(value);
-  return new RegExp(normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 };
 
 const resolveReferenceIds = async (value: unknown, model: Pick<typeof Skill, 'find'>) => {
@@ -89,8 +99,9 @@ const buildJobFilter = async (req: Request): Promise<FilterQuery<JobDocument>> =
     filter.normalizedLocation = new RegExp(normalized, 'i');
   }
 
-  if (typeof workType === 'string' && workType.trim()) {
-    filter.workType = workType.trim().toUpperCase();
+  const workTypes = parseEnumCsv(workType, allowedWorkTypes);
+  if (workTypes.length > 0) {
+    filter.workType = workTypes.length === 1 ? workTypes[0] : { $in: workTypes };
   }
 
   if (typeof experience === 'string' && experience.trim()) {
@@ -101,8 +112,27 @@ const buildJobFilter = async (req: Request): Promise<FilterQuery<JobDocument>> =
     filter.fresherAccepted = fresherAccepted === 'true';
   }
 
-  if (typeof jobType === 'string' && jobType.trim()) {
-    filter.jobType = jobType.trim().toUpperCase();
+  const jobTypes = parseEnumCsv(jobType, allowedJobTypes);
+  if (jobTypes.length > 0) {
+    const selectedStandardJobTypes = jobTypes.filter((item) => standardJobTypes.includes(item));
+    const includesInternship = jobTypes.includes('INTERNSHIP');
+
+    if (includesInternship) {
+      addAndCondition(filter, {
+        $or: [
+          ...(selectedStandardJobTypes.length > 0
+            ? [{ jobType: { $in: selectedStandardJobTypes } }]
+            : []),
+          { jobType: 'INTERNSHIP' },
+          { title: internshipTitleRegex },
+        ],
+      });
+    } else {
+      filter.jobType =
+        selectedStandardJobTypes.length === 1
+          ? selectedStandardJobTypes[0]
+          : { $in: selectedStandardJobTypes };
+    }
   }
 
   if (typeof status === 'string' && status.trim()) {
