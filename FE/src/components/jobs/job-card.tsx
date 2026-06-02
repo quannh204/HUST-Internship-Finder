@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { Job } from "../../types/job";
 import { Panel, Pill } from "./ui";
 
@@ -12,6 +12,8 @@ function getCompanyInitials(companyName: string): string {
 }
 
 export function JobCard({ job }: { job: Job }) {
+  const location = useLocation();
+  const fromPath = `${location.pathname}${location.search}`;
   const initials = getCompanyInitials(job.companyName);
   const skillNames = Array.isArray(job.skills) 
     ? job.skills.map(s => typeof s === 'string' ? s : s.name).slice(0, 3)
@@ -60,6 +62,7 @@ export function JobCard({ job }: { job: Job }) {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
             to={`/jobs/${job._id}`}
+            state={{ fromJobsNavigation: true, fromPath }}
             className="inline-flex flex-1 items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             Xem chi tiết
