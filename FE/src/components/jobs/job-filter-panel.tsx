@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { jobTypeLabels, jobTypeOptions, workTypeLabels, workTypeOptions } from "../../data/jobs";
 import type { JobFilters, JobType, WorkType } from "../../types/job";
 import { Panel, SectionTitle } from "./ui";
@@ -11,6 +12,7 @@ type JobFilterPanelProps = {
   onToggleWorkType: (value: WorkType) => void;
   onLocationChange: (value: string) => void;
   onReset: () => void;
+  availableSkills?: Array<{ _id: string; name: string }>;
 };
 
 function CheckboxRow({
@@ -44,7 +46,14 @@ export function JobFilterPanel({
   onToggleWorkType,
   onLocationChange,
   onReset,
+  availableSkills,
 }: JobFilterPanelProps) {
+  const [isSkillInputFocused, setIsSkillInputFocused] = useState(false);
+
+  const filteredSkills = (availableSkills ?? []).filter((skill) =>
+    skill.name.toLowerCase().includes(skillSearch.toLowerCase())
+  );
+
   return (
     <Panel className="p-5">
       <div className="space-y-5">
@@ -52,12 +61,37 @@ export function JobFilterPanel({
 
         <section className="space-y-3">
           <h3 className="text-sm font-semibold text-slate-900">Kỹ năng</h3>
-          <input
-            value={skillSearch}
-            onChange={(event) => onSkillSearchChange(event.target.value)}
-            placeholder="Tìm kiếm kỹ năng..."
-            className="h-11 w-full rounded-xl border border-line bg-slate-50 px-4 text-sm outline-none transition focus:border-primary focus:bg-white"
-          />
+          <div className="relative">
+            <input
+              value={skillSearch}
+              onChange={(event) => onSkillSearchChange(event.target.value)}
+              onFocus={() => setIsSkillInputFocused(true)}
+              onBlur={() => setIsSkillInputFocused(false)}
+              placeholder="Tìm kiếm kỹ năng..."
+              className="h-11 w-full rounded-xl border border-line bg-slate-50 px-4 text-sm outline-none transition focus:border-primary focus:bg-white"
+            />
+            
+            {/* Dropdown list */}
+            {(isSkillInputFocused || skillSearch) && filteredSkills.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 max-h-48 overflow-y-auto rounded-xl border border-line bg-white shadow-lg z-10">
+                {filteredSkills.map((skill) => (
+                  <button
+                    key={skill._id}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      onToggleSkill(skill.name);
+                      onSkillSearchChange("");
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition border-b border-slate-100 last:border-b-0"
+                  >
+                    {skill.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex max-h-52 flex-wrap gap-2 overflow-y-auto pt-1">
             {filters.skills.map((skill) => (
               <button

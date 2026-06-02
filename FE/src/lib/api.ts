@@ -94,4 +94,12 @@ export const jobApi = {
     }
     return response.json();
   },
+
+  async getSkills(): Promise<{ data: Array<{ _id: string; name: string }> }> {
+    const response = await fetch(`${API_BASE_URL}/skills`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch skills: ${response.statusText}`);
+    }
+    return response.json();
+  },
 };
