@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type UIEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { JobCard } from "../components/jobs/job-card";
 import { JobFilterPanel } from "../components/jobs/job-filter-panel";
@@ -6,10 +6,16 @@ import { JobSearchBar } from "../components/jobs/job-search-bar";
 import { Pagination } from "../components/jobs/pagination";
 import { Panel, SectionTitle } from "../components/jobs/ui";
 import { jobApi } from "../lib/api";
-import { buildSearchParams, defaultJobFilters, parseFilters } from "../lib/job-filters";
+import { buildSearchParams, defaultJobFilters, parseFilters, parsePage } from "../lib/job-filters";
 import type { Job, JobFilters, JobsResponse } from "../types/job";
 
 const PAGE_SIZE = 10;
+
+type SearchDraft = {
+  searchKey: string;
+  keyword: string;
+  location: string;
+};
 
 function toggleValue<T extends string>(values: T[], value: T) {
   return values.includes(value)
@@ -17,13 +23,38 @@ function toggleValue<T extends string>(values: T[], value: T) {
     : [...values, value];
 }
 
+function getSavedScrollPosition(key: string) {
+  try {
+    const savedPosition = Number(window.sessionStorage.getItem(key));
+
+    return Number.isFinite(savedPosition) && savedPosition > 0 ? savedPosition : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveScrollPosition(key: string, position: number) {
+  try {
+    window.sessionStorage.setItem(key, String(position));
+  } catch {
+    // Session storage can be unavailable in restricted browser contexts.
+  }
+}
+
 export function JobsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = parseFilters(searchParams);
-  const [currentPage, setCurrentPage] = useState(1);
+  const currentPage = parsePage(searchParams);
+  const currentSearch = searchParams.toString();
+  const filterPagePath = currentSearch ? `/jobs/filter?${currentSearch}` : "/jobs/filter";
+  const listScrollKey = `jobs-list-scroll:/jobs?${currentSearch}`;
+  const jobsListRef = useRef<HTMLDivElement>(null);
   const [skillSearch, setSkillSearch] = useState("");
-  const [keywordInput, setKeywordInput] = useState(filters.keyword);
-  const [locationInput, setLocationInput] = useState(filters.location);
+  const [searchDraft, setSearchDraft] = useState<SearchDraft>(() => ({
+    searchKey: currentSearch,
+    keyword: filters.keyword,
+    location: filters.location,
+  }));
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +63,22 @@ export function JobsPage() {
   const selectedSkills = filters.skills.join(",");
   const selectedWorkTypes = filters.workTypes.join(",");
   const selectedJobTypes = filters.jobTypes.join(",");
+  const isSearchDraftCurrent = searchDraft.searchKey === currentSearch;
+  const keywordInput = isSearchDraftCurrent ? searchDraft.keyword : filters.keyword;
+  const locationInput = isSearchDraftCurrent ? searchDraft.location : filters.location;
+
+  useLayoutEffect(() => {
+    if (loading) return;
+
+    const listElement = jobsListRef.current;
+    if (!listElement) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      listElement.scrollTop = getSavedScrollPosition(listScrollKey);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [jobs.length, listScrollKey, loading]);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -70,19 +117,34 @@ export function JobsPage() {
   }, [currentPage, filters.location, filters.keyword, selectedJobTypes, selectedSkills, selectedWorkTypes]);
 
   function updateFilters(nextFilters: JobFilters) {
-    setCurrentPage(1);
     setSearchParams(buildSearchParams(nextFilters));
   }
 
+  function updatePage(page: number) {
+    setSearchParams(buildSearchParams(filters, page));
+  }
+
+  function handleListScroll(event: UIEvent<HTMLDivElement>) {
+    saveScrollPosition(listScrollKey, event.currentTarget.scrollTop);
+  }
+
+  function updateKeywordInput(keyword: string) {
+    setSearchDraft({
+      searchKey: currentSearch,
+      keyword,
+      location: locationInput,
+    });
+  }
+
+  function updateLocationInput(location: string) {
+    setSearchDraft({
+      searchKey: currentSearch,
+      keyword: keywordInput,
+      location,
+    });
+  }
+
   function patchFilters(patch: Partial<JobFilters>) {
-    if (patch.keyword !== undefined) {
-      setKeywordInput(patch.keyword);
-    }
-
-    if (patch.location !== undefined) {
-      setLocationInput(patch.location);
-    }
-
     updateFilters({
       ...filters,
       ...patch,
@@ -102,8 +164,8 @@ export function JobsPage() {
           <JobSearchBar
             keyword={keywordInput}
             location={locationInput}
-            onKeywordChange={(keyword) => setKeywordInput(keyword)}
-            onLocationChange={(location) => setLocationInput(location)}
+            onKeywordChange={updateKeywordInput}
+            onLocationChange={updateLocationInput}
             onSearch={() => {
               patchFilters({ keyword: keywordInput, location: locationInput });
             }}
@@ -126,8 +188,11 @@ export function JobsPage() {
                   onToggleWorkType={(value) => patchFilters({ workTypes: toggleValue(filters.workTypes, value) })}
                   onLocationChange={(location) => patchFilters({ location })}
                   onReset={() => {
-                    setKeywordInput(defaultJobFilters.keyword);
-                    setLocationInput(defaultJobFilters.location);
+                    setSearchDraft({
+                      searchKey: "",
+                      keyword: defaultJobFilters.keyword,
+                      location: defaultJobFilters.location,
+                    });
                     updateFilters(defaultJobFilters);
                   }}
                 />
@@ -136,7 +201,7 @@ export function JobsPage() {
 
             {/* Jobs List - scroll riêng phần này */}
             <div className="flex min-h-0 flex-col">
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div ref={jobsListRef} onScroll={handleListScroll} className="min-h-0 flex-1 overflow-y-auto">
                 <div className="flex flex-col gap-5 pb-6">
                 <Panel className="p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -147,8 +212,8 @@ export function JobsPage() {
                       </p>
                     </div>
                     <Link
-                      to="/jobs/filter"
-                      className="inline-flex items-center justify-center rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary lg:hidden"
+                      to={filterPagePath}
+                      className="inline-flex items-center justify-center rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface lg:hidden"
                     >
                       Mở bộ lọc
                     </Link>
@@ -183,7 +248,7 @@ export function JobsPage() {
                 </div>
               </div>
               <div className="shrink-0 border-t border-line bg-surface/95 py-4">
-                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={updatePage} />
               </div>
             </div>
           </div>

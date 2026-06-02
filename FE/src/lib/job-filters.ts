@@ -32,7 +32,13 @@ export function parseFilters(searchParams: URLSearchParams): JobFilters {
   };
 }
 
-export function buildSearchParams(filters: JobFilters): URLSearchParams {
+export function parsePage(searchParams: URLSearchParams): number {
+  const page = Number(searchParams.get("page"));
+
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+export function buildSearchParams(filters: JobFilters, page = 1): URLSearchParams {
   const nextParams = new URLSearchParams();
   const trimmedKeyword = filters.keyword.trim();
   const trimmedLocation = filters.location.trim();
@@ -42,6 +48,7 @@ export function buildSearchParams(filters: JobFilters): URLSearchParams {
   filters.skills.forEach((skill) => nextParams.append("skill", skill));
   filters.workTypes.forEach((workType) => nextParams.append("workType", workType));
   filters.jobTypes.forEach((jobType) => nextParams.append("jobType", jobType));
+  if (page > 1) nextParams.set("page", String(page));
 
   return nextParams;
 }
