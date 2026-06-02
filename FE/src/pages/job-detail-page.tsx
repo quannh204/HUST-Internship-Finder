@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Panel, Pill } from "../components/jobs/ui";
 import { jobApi } from "../lib/api";
 import type { Job } from "../types/job";
@@ -13,11 +13,73 @@ function getCompanyInitials(companyName: string): string {
     .slice(0, 2);
 }
 
+type JobDetailLocationState = {
+  fromJobsNavigation?: boolean;
+  fromPath?: string;
+};
+
+function isJobsReturnPath(path: string) {
+  return path === "/jobs" || path.startsWith("/jobs?") || path === "/jobs/filter" || path.startsWith("/jobs/filter?");
+}
+
+function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+    </svg>
+  );
+}
+
+const backButtonClassName =
+  "inline-flex items-center justify-center gap-2 rounded-full border border-line bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-primary hover:bg-primary-soft hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+
+function BackToJobsButton({
+  className = "",
+  onClick,
+}: {
+  className?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" onClick={onClick} className={`${backButtonClassName} ${className}`}>
+      <ArrowLeftIcon />
+      <span>Quay lại danh sách</span>
+    </button>
+  );
+}
+
 export function JobDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const routeState = location.state as JobDetailLocationState | null;
+  const returnPath =
+    routeState?.fromPath && isJobsReturnPath(routeState.fromPath) ? routeState.fromPath : "/jobs";
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  function handleBackToJobs() {
+    const historyState = window.history.state as { idx?: number } | null;
+    const canUseHistoryReturn =
+      routeState?.fromJobsNavigation === true &&
+      typeof historyState?.idx === "number" &&
+      historyState.idx > 0;
+
+    if (canUseHistoryReturn) {
+      navigate(-1);
+      return;
+    }
+
+    navigate(returnPath);
+  }
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -49,12 +111,7 @@ export function JobDetailPage() {
       <Panel className="mx-auto max-w-2xl border border-red-200 bg-red-50 p-8 text-center">
         <h2 className="text-xl font-semibold text-red-600">Lỗi</h2>
         <p className="mt-2 text-sm text-red-500">{error}</p>
-        <Link
-          to="/jobs"
-          className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-        >
-          Quay lại danh sách
-        </Link>
+        <BackToJobsButton onClick={handleBackToJobs} className="mt-6" />
       </Panel>
     );
   }
@@ -64,12 +121,7 @@ export function JobDetailPage() {
       <Panel className="mx-auto max-w-2xl p-8 text-center">
         <h2 className="text-xl font-semibold text-slate-900">Không tìm thấy công việc</h2>
         <p className="mt-2 text-sm text-slate-500">Công việc bạn tìm kiếm không tồn tại.</p>
-        <Link
-          to="/jobs"
-          className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-        >
-          Quay lại danh sách
-        </Link>
+        <BackToJobsButton onClick={handleBackToJobs} className="mt-6" />
       </Panel>
     );
   }
@@ -83,9 +135,7 @@ export function JobDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center">
-        <Link to="/jobs" className="text-sm font-medium text-primary transition hover:text-blue-700">
-          ← Quay lại danh sách
-        </Link>
+        <BackToJobsButton onClick={handleBackToJobs} />
       </div>
 
       <div className="mx-auto w-full max-w-5xl space-y-5">

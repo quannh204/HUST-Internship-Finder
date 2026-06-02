@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { JobFilterPanel } from "../components/jobs/job-filter-panel";
 import { SectionTitle } from "../components/jobs/ui";
-import { buildSearchParams, defaultJobFilters, parseFilters } from "../lib/job-filters";
+import { buildSearchParams, defaultJobFilters, parseFilters, parsePage } from "../lib/job-filters";
 import type { JobFilters } from "../types/job";
 
 function toggleValue<T extends string>(values: T[], value: T) {
@@ -11,9 +11,21 @@ function toggleValue<T extends string>(values: T[], value: T) {
     : [...values, value];
 }
 
+function getSearchString(searchParams: URLSearchParams) {
+  const search = searchParams.toString();
+
+  return search ? `?${search}` : "";
+}
+
+function areFiltersEqual(firstFilters: JobFilters, secondFilters: JobFilters) {
+  return buildSearchParams(firstFilters).toString() === buildSearchParams(secondFilters).toString();
+}
+
 export function JobFilterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const currentFilters = parseFilters(searchParams);
+  const jobsPath = `/jobs${getSearchString(searchParams)}`;
   const [skillSearch, setSkillSearch] = useState("");
   const [draftFilters, setDraftFilters] = useState<JobFilters>(() => parseFilters(searchParams));
 
@@ -25,9 +37,15 @@ export function JobFilterPage() {
   }
 
   function saveFilters() {
+    const shouldKeepCurrentPage = areFiltersEqual(currentFilters, draftFilters);
+    const nextParams = buildSearchParams(
+      draftFilters,
+      shouldKeepCurrentPage ? parsePage(searchParams) : 1
+    );
+
     navigate({
       pathname: "/jobs",
-      search: `?${buildSearchParams(draftFilters).toString()}`,
+      search: getSearchString(nextParams),
     });
   }
 
@@ -35,11 +53,21 @@ export function JobFilterPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
-          <Link to="/jobs" className="text-sm font-medium text-primary transition hover:text-blue-700">
-            Quay lại danh sách
-          </Link>
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm font-medium">
+            <Link
+              to="/"
+              className="rounded-md text-slate-500 transition hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            >
+              Trang chủ
+            </Link>
+            
+            <span aria-hidden="true" className="text-slate-300">
+              &gt;
+            </span>
+            <span className="text-slate-900">Bộ lọc nâng cao</span>
+          </nav>
           <SectionTitle
-            title="Bộ lọc công việc"
+            title="Bộ lọc nâng cao"
             subtitle="Tinh chỉnh tìm kiếm theo nhu cầu của bạn."
           />
         </div>
@@ -59,7 +87,7 @@ export function JobFilterPage() {
       <button
         type="button"
         onClick={saveFilters}
-        className="rounded-xl bg-primary px-6 py-3 text-center font-semibold text-white transition hover:bg-blue-700"
+        className="rounded-xl bg-primary px-6 py-3 text-center font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         Áp dụng bộ lọc
       </button>
