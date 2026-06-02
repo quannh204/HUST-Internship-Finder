@@ -5,6 +5,7 @@ type JobSearchBarProps = {
   location: string;
   onKeywordChange: (value: string) => void;
   onLocationChange: (value: string) => void;
+  onSearch?: () => void;
 };
 
 export function JobSearchBar({
@@ -12,6 +13,7 @@ export function JobSearchBar({
   location,
   onKeywordChange,
   onLocationChange,
+  onSearch,
 }: JobSearchBarProps) {
   return (
     <div className="rounded-2xl border border-line bg-white p-4 shadow-card sm:p-5">
@@ -37,6 +39,7 @@ export function JobSearchBar({
         <button
           type="button"
           className="inline-flex h-12 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          onClick={onSearch}
         >
           Tìm kiếm
         </button>

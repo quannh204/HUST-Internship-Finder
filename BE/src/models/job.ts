@@ -15,6 +15,7 @@ const jobSchema = new mongoose.Schema(
     majors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Major' }],
     foreignLanguageAbility: { type: String, default: '' },
     location: { type: String, required: true },
+    normalizedLocation: { type: String, index: true },
     workType: {
       type: String,
       enum: ['OFFLINE', 'REMOTE', 'HYBRID'],
@@ -34,7 +35,16 @@ const jobSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
+jobSchema.pre('save', function(next) {
+  if (this.location) {
+    const locationString = String(this.location); 
+    this.normalizedLocation = locationString
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+  next();
+});
 jobSchema.index({ title: 'text', companyName: 'text', description: 'text' });
 
 export type JobDocument = InferSchemaType<typeof jobSchema>;

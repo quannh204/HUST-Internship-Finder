@@ -19,6 +19,18 @@ const parseCsv = (value: unknown) => {
 const createRegex = (value: string) =>
   new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 
+const removeVietnameseDiacritics = (str: string): string => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') 
+    .toLowerCase();
+};
+
+const createLocationRegex = (value: string) => {
+  const normalized = removeVietnameseDiacritics(value);
+  return new RegExp(normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+};
+
 const resolveReferenceIds = async (value: unknown, model: Pick<typeof Skill, 'find'>) => {
   const values = parseCsv(value);
 
@@ -73,7 +85,8 @@ const buildJobFilter = async (req: Request): Promise<FilterQuery<JobDocument>> =
   }
 
   if (typeof location === 'string' && location.trim()) {
-    filter.location = createRegex(location.trim());
+    const normalized = removeVietnameseDiacritics(location.trim());
+    filter.normalizedLocation = new RegExp(normalized, 'i');
   }
 
   if (typeof workType === 'string' && workType.trim()) {
@@ -140,13 +153,17 @@ export const searchJobs = async (req: Request, res: Response) => {
   }
 
   const filter = await buildJobFilter(req);
+  const regex = new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
   const searchFilter: FilterQuery<JobDocument> = {
     ...filter,
-    $text: { $search: keyword },
+    $or: [
+      { title: regex },
+      { description: regex },
+      { companyName: regex }
+    ],
   };
   const result = await runPaginatedJobQuery(req, searchFilter, {
-    score: { $meta: 'textScore' },
-    createdAt: -1,
+    createdAt: -1
   });
 
   res.status(200).json(result);

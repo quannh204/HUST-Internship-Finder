@@ -22,6 +22,8 @@ export function JobsPage() {
   const filters = parseFilters(searchParams);
   const [currentPage, setCurrentPage] = useState(1);
   const [skillSearch, setSkillSearch] = useState("");
+  const [keywordInput, setKeywordInput] = useState(filters.keyword);
+  const [locationInput, setLocationInput] = useState(filters.location);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,13 +31,35 @@ export function JobsPage() {
   const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
+    setLocationInput(filters.location);
+  }, [filters.location]);
+
+  useEffect(() => {
+    setKeywordInput(filters.keyword);
+  }, [filters.keyword]);
+
+  useEffect(() => {
     const fetchJobs = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await jobApi.getJobs(currentPage, PAGE_SIZE, {
-          location: filters.location || undefined,
-        });
+        let response: JobsResponse;
+        
+        if (filters.keyword) {
+          response = await jobApi.searchJobs(
+            filters.keyword,
+            currentPage,
+            PAGE_SIZE,
+            {
+              location: filters.location || undefined,
+            }
+          );
+        } else {
+          response = await jobApi.getJobs(currentPage, PAGE_SIZE, {
+            location: filters.location || undefined,
+          });
+        }
+    
         setJobs(response.data);
         setTotalPages(response.pagination.totalPages);
       } catch (err) {
@@ -46,7 +70,7 @@ export function JobsPage() {
     };
 
     fetchJobs();
-  }, [currentPage, filters.location]);
+  }, [currentPage, filters.location, filters.keyword]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -71,10 +95,13 @@ export function JobsPage() {
       />
 
       <JobSearchBar
-        keyword={filters.keyword}
-        location={filters.location}
-        onKeywordChange={(keyword) => patchFilters({ keyword })}
-        onLocationChange={(location) => patchFilters({ location })}
+        keyword={keywordInput}
+        location={locationInput}
+        onKeywordChange={(keyword) => setKeywordInput(keyword)}
+        onLocationChange={(location) => setLocationInput(location)}
+        onSearch={() => {
+          patchFilters({ keyword: keywordInput, location: locationInput });
+        }}
       />
 
       <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
