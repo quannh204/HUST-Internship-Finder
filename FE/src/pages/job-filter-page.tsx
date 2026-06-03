@@ -30,7 +30,6 @@ export function JobFilterPage() {
   const [skillSearch, setSkillSearch] = useState("");
   const [draftFilters, setDraftFilters] = useState<JobFilters>(() => parseFilters(searchParams));
   const [availableSkills, setAvailableSkills] = useState<Array<{ _id: string; name: string }>>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -39,8 +38,6 @@ export function JobFilterPage() {
         setAvailableSkills(response.data);
       } catch (err) {
         console.error("Failed to fetch skills:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
