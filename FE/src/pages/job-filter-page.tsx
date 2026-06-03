@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { JobFilterPanel } from "../components/jobs/job-filter-panel";
-import { SectionTitle, Panel } from "../components/jobs/ui";
+import { SectionTitle } from "../components/jobs/ui";
 import { jobApi } from "../lib/api";
 import { buildSearchParams, defaultJobFilters, parseFilters, parsePage } from "../lib/job-filters";
 import type { JobFilters } from "../types/job";
@@ -26,7 +26,7 @@ export function JobFilterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const currentFilters = parseFilters(searchParams);
-  const jobsPath = `/jobs${getSearchString(searchParams)}`;
+  // const jobsPath = `/jobs${getSearchString(searchParams)}`;
   const [skillSearch, setSkillSearch] = useState("");
   const [draftFilters, setDraftFilters] = useState<JobFilters>(() => parseFilters(searchParams));
   const [availableSkills, setAvailableSkills] = useState<Array<{ _id: string; name: string }>>([]);
@@ -78,7 +78,7 @@ export function JobFilterPage() {
             >
               Trang chủ
             </Link>
-            
+
             <span aria-hidden="true" className="text-slate-300">
               &gt;
             </span>
